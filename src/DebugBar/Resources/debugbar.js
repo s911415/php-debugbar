@@ -1159,6 +1159,61 @@ if (typeof(PhpDebugBar) == 'undefined') {
                 }, false);
                 proxied.apply(this, Array.prototype.slice.call(arguments));
             };
+        },
+        
+        /**
+         * Attaches an event listener to Fetch API
+         * 
+         * @this {AjaxHandler}
+         */
+        bindToFetch: function() {
+            var self = this;
+            var proxied = window.fetch;
+            if(proxied) {
+                window.fetch = function() {
+                    var args = [...arguments];
+                    var url = args[0];
+                    var options = {};
+                    if(args.length > 1) {
+                        options = {...args[1]};
+                        options.credentials = options.credentials || 'same-origin';
+                    }
+
+                    let optsHeaders = options.headers;
+                    if(optsHeaders === undefined) {
+                        optsHeaders = {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        };
+                    } else if (optsHeaders instanceof window.Headers) {
+                        optsHeaders.set('X-Requested-With', 'XMLHttpRequest');
+                    } else if (optsHeaders instanceof window.Headers) {
+                        optsHeaders['X-Requested-With'] = 'XMLHttpRequest';
+                    }
+                    options.headers = optsHeaders;
+                    args[1] = options;
+                    
+                    return proxied.apply(window, args)
+                        .then(function(response) {
+                            var skipUrl = self.debugbar.openHandler ? self.debugbar.openHandler.get('url') : null;
+                            if (url.indexOf(skipUrl) !== 0) {
+                                let headersInString = null;
+                                response.headers.forEach(function(v, k) {
+                                    if(headersInString === null) headersInString = [];
+                                    headersInString.push(k.toLowerCase() + ': ' + v);
+                                });
+                                if(headersInString !== null) {
+                                    headersInString = headersInString.join('\r\n');
+                                }
+                                self.handle({
+                                    readyState: 4,
+                                    getAllResponseHeaders: () => headersInString,
+                                    getResponseHeader: (key) => response.headers.get(key)
+                                });
+                            }
+                            return response;
+                        });
+                };
+            }
         }
 
     });

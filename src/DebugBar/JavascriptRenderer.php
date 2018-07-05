@@ -74,6 +74,8 @@ class JavascriptRenderer
 
     protected $ajaxHandlerBindToXHR = false;
 
+    protected $ajaxHandlerBindToFetch = true;
+
     protected $ajaxHandlerAutoShow = true;
 
     protected $openHandlerClass = 'PhpDebugBar.OpenHandler';
@@ -517,6 +519,27 @@ class JavascriptRenderer
     public function isAjaxHandlerBoundToXHR()
     {
         return $this->ajaxHandlerBindToXHR;
+    }
+
+    /**
+     * Sets whether to call bindToFetch() on the ajax handler
+     *
+     * @param boolean $bind
+     */
+    public function setBindAjaxHandlerToFetch($bind = true)
+    {
+        $this->ajaxHandlerBindToFetch = $bind;
+        return $this;
+    }
+
+    /**
+     * Checks whether bindToFetch() will be called on the ajax handler
+     *
+     * @return boolean
+     */
+    public function isAjaxHandlerBoundToFetch()
+    {
+        return $this->ajaxHandlerBindToFetch;
     }
 
     /**
@@ -1026,6 +1049,9 @@ class JavascriptRenderer
                 $js .= sprintf("%s.ajaxHandler.bindToXHR();\n", $this->variableName);
             } elseif ($this->ajaxHandlerBindToJquery) {
                 $js .= sprintf("if (jQuery) %s.ajaxHandler.bindToJquery(jQuery);\n", $this->variableName);
+            }
+            if($this->ajaxHandlerBindToFetch) {
+                $js .= sprintf("%s.ajaxHandler.bindToFetch();\n", $this->variableName);
             }
         }
 
